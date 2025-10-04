@@ -10,7 +10,7 @@ interface QuestionBarProps {
 
 export default function QuestionBar({ question, currentIndex, totalQuestions, attemptsRemaining, paperTitle }: QuestionBarProps) {
   return (
-    <div className="sticky top-0 z-10 bg-blue-600/30 backdrop-blur-sm p-3 sm:p-4">
+    <div className="sticky top-0 z-10 bg-blue-600/30 backdrop-blur-sm p-3 sm:p-4 question-bar">
       <div className="max-w-4xl mx-auto ml-4 sm:ml-6">
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">

@@ -31,12 +31,26 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
       const trimmedAnswer = answer.trim();
       setAnswer(''); // Clear input first
       onSubmit(trimmedAnswer);
+      // Ensure last message is visible after submission
+      setTimeout(() => {
+        const messagesEnd = document.querySelector('[data-messages-end]');
+        if (messagesEnd) {
+          messagesEnd.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
   const handleShortcut = (shortcut: string) => {
     if (!disabled) {
       onSubmit(shortcut);
+      // Ensure last message is visible after shortcut is used
+      setTimeout(() => {
+        const messagesEnd = document.querySelector('[data-messages-end]');
+        if (messagesEnd) {
+          messagesEnd.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
@@ -140,6 +154,13 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
         setKeyboardOpen(true);
         // Add class to body for global styling
         document.body.classList.add('keyboard-open');
+        // Scroll to bottom to show recent messages
+        setTimeout(() => {
+          const messagesEnd = document.querySelector('[data-messages-end]');
+          if (messagesEnd) {
+            messagesEnd.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
       }
     };
 
@@ -162,7 +183,21 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
       const handleViewportChange = () => {
         if (isMobile) {
           const heightDiff = window.innerHeight - (window.visualViewport?.height || window.innerHeight);
-          setKeyboardOpen(heightDiff > 150); // Keyboard is likely open if height difference is significant
+          const keyboardIsOpen = heightDiff > 150;
+          setKeyboardOpen(keyboardIsOpen);
+          
+          if (keyboardIsOpen) {
+            document.body.classList.add('keyboard-open');
+            // Scroll to show recent messages when keyboard opens
+            setTimeout(() => {
+              const messagesEnd = document.querySelector('[data-messages-end]');
+              if (messagesEnd) {
+                messagesEnd.scrollIntoView({ behavior: 'smooth' });
+              }
+            }, 100);
+          } else {
+            document.body.classList.remove('keyboard-open');
+          }
         }
       };
 
@@ -199,7 +234,7 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
       <div className="max-w-4xl mx-auto mobile-input-container">
         {/* Floating Shortcut Buttons - Only show after first message */}
         {showShortcuts && (
-          <div className="flex gap-2 sm:gap-3 mb-4">
+          <div className="flex gap-2 sm:gap-3 mb-4 shortcut-buttons">
             <button
               type="button"
               onClick={() => handleShortcut('Simplify')}

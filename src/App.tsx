@@ -21,12 +21,28 @@ function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
+    // Always scroll to bottom when new messages are added
     scrollToBottom();
   }, [messages]);
+
+  // Additional scroll behavior for better visibility
+  useEffect(() => {
+    const handleResize = () => {
+      // Scroll to bottom on window resize to ensure last message is visible
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const addMessage = (text: string, sender: 'ruby' | 'user') => {
     const newMessage: Message = {
@@ -141,78 +157,108 @@ function App() {
       return;
     }
 
+    // Check if this is a shortcut response (not a regular answer)
+    const isShortcut = ['Simplify', 'Explain', 'Summarize', 'Example'].includes(answer);
+    
     addMessage(answer, 'user');
 
-    setTimeout(() => {
-      const isCorrect = checkAnswer(
-        answer,
-        currentQuestion.solutionDetails.correctAnswer,
-        currentQuestion.isLongAnswer
-      );
-
-      if (isCorrect) {
-        const attemptsUsed = 6 - currentState.attemptsRemaining;
-        const marks = calculateMarks(true, attemptsUsed, currentQuestion.maxMarks);
-
-        const updatedStates = [...questionStates];
-        updatedStates[currentQuestionIndex] = {
-          ...currentState,
-          isCompleted: true,
-          marksEarned: marks
-        };
-        setQuestionStates(updatedStates);
-
-        // Track stats for correct answer
-        updateStats(true, currentQuestion.questionNumber, 1);
-
-        addMessage(
-          `✅ Correct! Well done. You earned ${marks}/${currentQuestion.maxMarks} mark(s).`,
-          'ruby'
+    if (isShortcut) {
+      // Handle shortcut responses - don't subtract attempts, just provide helpful response
+      setTimeout(() => {
+        let response = '';
+        switch (answer) {
+          case 'Simplify':
+            response = `Let me simplify this question: ${currentQuestion.questionText}. Focus on the key concepts and break it down into smaller parts.`;
+            break;
+          case 'Explain':
+            response = `Here's an explanation: ${currentQuestion.solutionDetails.explanation}. This should help you understand the approach to solve this question.`;
+            break;
+          case 'Summarize':
+            response = `Summary: This question asks you to ${currentQuestion.questionText}. The key points to remember are the main concepts involved.`;
+            break;
+          case 'Example':
+            response = `Here's an example approach: ${currentQuestion.solutionDetails.explanation}. Try to apply similar reasoning to your answer.`;
+            break;
+          default:
+            response = `I'm here to help! What specific aspect of this question would you like me to clarify?`;
+        }
+        
+        addMessage(response, 'ruby');
+        setIsProcessing(false);
+      }, 800);
+    } else {
+      // Handle regular answer submission
+      setTimeout(() => {
+        const isCorrect = checkAnswer(
+          answer,
+          currentQuestion.solutionDetails.correctAnswer,
+          currentQuestion.isLongAnswer
         );
 
-        setIsProcessing(false);
-        setTimeout(() => {
-          moveToNextQuestion();
-        }, 3000); // 3 seconds to review the answer
-      } else {
-        const newAttemptsRemaining = currentState.attemptsRemaining - 1;
+        if (isCorrect) {
+          const attemptsUsed = 6 - currentState.attemptsRemaining;
+          const marks = calculateMarks(true, attemptsUsed, currentQuestion.maxMarks);
 
-        if (newAttemptsRemaining === 0) {
           const updatedStates = [...questionStates];
           updatedStates[currentQuestionIndex] = {
             ...currentState,
             isCompleted: true,
-            attemptsRemaining: 0,
-            marksEarned: 0
+            marksEarned: marks
           };
           setQuestionStates(updatedStates);
 
+          // Track stats for correct answer
+          updateStats(true, currentQuestion.questionNumber, 1);
+
           addMessage(
-            `❌ No attempts left. The correct answer is: ${currentQuestion.solutionDetails.correctAnswer}. ${currentQuestion.solutionDetails.explanation} (0 marks)`,
+            `✅ Correct! Well done. You earned ${marks}/${currentQuestion.maxMarks} mark(s).`,
             'ruby'
           );
-
-          // Track stats for incorrect answer
-          updateStats(false, currentQuestion.questionNumber, 1);
 
           setIsProcessing(false);
           setTimeout(() => {
             moveToNextQuestion();
-          }, 4000); // 4 seconds to review the answer and explanation
+          }, 3000); // 3 seconds to review the answer
         } else {
-          const updatedStates = [...questionStates];
-          updatedStates[currentQuestionIndex] = {
-            ...currentState,
-            attemptsRemaining: newAttemptsRemaining
-          };
-          setQuestionStates(updatedStates);
+          const newAttemptsRemaining = currentState.attemptsRemaining - 1;
 
-          const hint = generateHint(currentQuestion, newAttemptsRemaining);
-          addMessage(`❌ Try again. ${hint}`, 'ruby');
-          setIsProcessing(false);
+          if (newAttemptsRemaining === 0) {
+            const updatedStates = [...questionStates];
+            updatedStates[currentQuestionIndex] = {
+              ...currentState,
+              isCompleted: true,
+              attemptsRemaining: 0,
+              marksEarned: 0
+            };
+            setQuestionStates(updatedStates);
+
+            addMessage(
+              `❌ No attempts left. The correct answer is: ${currentQuestion.solutionDetails.correctAnswer}. ${currentQuestion.solutionDetails.explanation} (0 marks)`,
+              'ruby'
+            );
+
+            // Track stats for incorrect answer
+            updateStats(false, currentQuestion.questionNumber, 1);
+
+            setIsProcessing(false);
+            setTimeout(() => {
+              moveToNextQuestion();
+            }, 4000); // 4 seconds to review the answer and explanation
+          } else {
+            const updatedStates = [...questionStates];
+            updatedStates[currentQuestionIndex] = {
+              ...currentState,
+              attemptsRemaining: newAttemptsRemaining
+            };
+            setQuestionStates(updatedStates);
+
+            const hint = generateHint(currentQuestion, newAttemptsRemaining);
+            addMessage(`❌ Try again. ${hint}`, 'ruby');
+            setIsProcessing(false);
+          }
         }
-      }
-    }, 800);
+      }, 800);
+    }
   };
 
   const handleSkip = () => {
@@ -305,7 +351,7 @@ function App() {
   const currentState = questionStates[currentQuestionIndex];
 
   return (
-    <div className="min-h-screen bg-blue-500 flex flex-col font-primary">
+    <div className="h-screen bg-blue-500 flex flex-col font-primary overflow-hidden">
       <QuestionBar
         question={currentQuestion}
         currentIndex={currentQuestionIndex}
@@ -319,7 +365,7 @@ function App() {
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} data-messages-end />
         </div>
       </div>
 

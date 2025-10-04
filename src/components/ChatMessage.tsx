@@ -7,7 +7,7 @@ interface ChatMessageProps {
 export default function ChatMessage({ message }: ChatMessageProps) {
   if (message.sender === 'ruby') {
     return (
-      <div className="flex justify-start mb-4">
+      <div className="flex justify-start mb-4 chat-message">
         <div className="flex items-start gap-3">
           <img 
             src="/images/icons/rubyIcon.svg" 
@@ -23,7 +23,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   }
 
   return (
-    <div className="flex justify-end mb-4">
+    <div className="flex justify-end mb-4 chat-message">
       <div className="max-w-xs sm:max-w-md">
         <div className="bg-blue-600 text-white rounded-2xl px-3 sm:px-5 py-2 sm:py-3 shadow-md">
           <p className="leading-relaxed text-sm sm:text-base font-primary">{message.text}</p>
