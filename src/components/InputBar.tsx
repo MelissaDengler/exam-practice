@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, SkipForward, ArrowLeft, Zap, HelpCircle, FileText, Lightbulb, Plus, FileText as FileIcon, Image, Camera } from 'lucide-react';
+import { useMobileKeyboard, scrollToElementWithKeyboard } from '../hooks/useMobileKeyboard';
 
 interface InputBarProps {
   onSubmit: (answer: string) => void;
@@ -17,13 +18,14 @@ interface InputBarProps {
 
 export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled, showShortcuts = false, onFileUpload }: InputBarProps) {
   const [answer, setAnswer] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
-  const [, setKeyboardOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Use the mobile keyboard hook
+  const { isMobile, keyboardOffset, isKeyboardOpen } = useMobileKeyboard();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,10 +35,8 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
       onSubmit(trimmedAnswer);
       // Ensure last message is visible after submission
       setTimeout(() => {
-        const messagesEnd = document.querySelector('[data-messages-end]');
-        if (messagesEnd) {
-          messagesEnd.scrollIntoView({ behavior: 'smooth' });
-        }
+        const messagesEnd = document.querySelector('[data-messages-end]') as HTMLElement;
+        scrollToElementWithKeyboard(messagesEnd, keyboardOffset);
       }, 100);
     }
   };
@@ -46,10 +46,8 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
       onSubmit(shortcut);
       // Ensure last message is visible after shortcut is used
       setTimeout(() => {
-        const messagesEnd = document.querySelector('[data-messages-end]');
-        if (messagesEnd) {
-          messagesEnd.scrollIntoView({ behavior: 'smooth' });
-        }
+        const messagesEnd = document.querySelector('[data-messages-end]') as HTMLElement;
+        scrollToElementWithKeyboard(messagesEnd, keyboardOffset);
       }, 100);
     }
   };
@@ -139,88 +137,16 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
     };
   }, [showDropdown]);
 
-  // Mobile detection and keyboard handling
+  // Handle keyboard open state for scrolling
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    // Keyboard detection for mobile
-    const handleKeyboardOpen = () => {
-      if (isMobile) {
-        setKeyboardOpen(true);
-        // Add class to body for global styling
-        document.body.classList.add('keyboard-open');
-        // Scroll to bottom to show recent messages
-        setTimeout(() => {
-          const messagesEnd = document.querySelector('[data-messages-end]');
-          if (messagesEnd) {
-            messagesEnd.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      }
-    };
-
-    const handleKeyboardClose = () => {
-      if (isMobile) {
-        setKeyboardOpen(false);
-        document.body.classList.remove('keyboard-open');
-      }
-    };
-
-    // Listen for input focus/blur to detect keyboard
-    const input = inputRef.current;
-    if (input) {
-      input.addEventListener('focus', handleKeyboardOpen);
-      input.addEventListener('blur', handleKeyboardClose);
+    if (isKeyboardOpen) {
+      // Scroll to show recent messages when keyboard opens
+      setTimeout(() => {
+        const messagesEnd = document.querySelector('[data-messages-end]') as HTMLElement;
+        scrollToElementWithKeyboard(messagesEnd, keyboardOffset);
+      }, 100);
     }
-
-    // Visual viewport API for better keyboard detection
-    if (window.visualViewport) {
-      const handleViewportChange = () => {
-        if (isMobile) {
-          const heightDiff = window.innerHeight - (window.visualViewport?.height || window.innerHeight);
-          const keyboardIsOpen = heightDiff > 150;
-          setKeyboardOpen(keyboardIsOpen);
-          
-          if (keyboardIsOpen) {
-            document.body.classList.add('keyboard-open');
-            // Scroll to show recent messages when keyboard opens
-            setTimeout(() => {
-              const messagesEnd = document.querySelector('[data-messages-end]');
-              if (messagesEnd) {
-                messagesEnd.scrollIntoView({ behavior: 'smooth' });
-              }
-            }, 100);
-          } else {
-            document.body.classList.remove('keyboard-open');
-          }
-        }
-      };
-
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-      
-      return () => {
-        window.removeEventListener('resize', checkMobile);
-        if (input) {
-          input.removeEventListener('focus', handleKeyboardOpen);
-          input.removeEventListener('blur', handleKeyboardClose);
-        }
-        window.visualViewport?.removeEventListener('resize', handleViewportChange);
-      };
-    }
-
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-      if (input) {
-        input.removeEventListener('focus', handleKeyboardOpen);
-        input.removeEventListener('blur', handleKeyboardClose);
-      }
-    };
-  }, [isMobile]);
+  }, [isKeyboardOpen, keyboardOffset]);
 
   return (
     <div 
@@ -230,6 +156,9 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
           ? 'mobile-keyboard-aware mobile-safe-area' 
           : 'sticky bottom-0 z-10 bg-transparent'
       } p-3 sm:p-4`}
+      style={{
+        paddingBottom: isMobile ? `calc(1rem + var(--kb-offset, 0px) + env(safe-area-inset-bottom, 0px))` : undefined
+      }}
     >
       <div className="max-w-4xl mx-auto mobile-input-container">
         {/* Floating Shortcut Buttons - Only show after first message */}

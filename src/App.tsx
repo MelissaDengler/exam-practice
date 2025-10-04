@@ -351,7 +351,7 @@ function App() {
   const currentState = questionStates[currentQuestionIndex];
 
   return (
-    <div className="h-screen bg-blue-500 flex flex-col font-primary overflow-hidden">
+    <div className="h-screen bg-blue-500 flex flex-col font-primary overflow-hidden" style={{ height: '100dvh' }}>
       <QuestionBar
         question={currentQuestion}
         currentIndex={currentQuestionIndex}

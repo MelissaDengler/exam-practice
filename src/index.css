@@ -5,6 +5,11 @@
 :root {
   --font-primary-reg: 'Arial, Helvetica, sans-serif';
   --font-primary-bold: 'Arial, Helvetica, sans-serif';
+  
+  /* Mobile keyboard handling CSS variables */
+  --kb-offset: 0px;
+  --kb-transition-duration: 0.3s;
+  --kb-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -88,55 +93,83 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   }
 }
 
-/* Mobile keyboard handling */
-@supports (-webkit-touch-callout: none) {
-  /* iOS Safari specific styles */
-  .mobile-keyboard-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
-    background: transparent;
-    transition: transform 0.3s ease-out;
+/* ===== MOBILE KEYBOARD HANDLING SYSTEM ===== */
+
+/* 1. Visual Viewport API Support */
+@supports (height: 100dvh) {
+  html {
+    height: 100dvh;
   }
   
-  .mobile-keyboard-container.keyboard-open {
-    transform: translateY(0);
+  body {
+    height: 100dvh;
+    overflow: hidden;
   }
 }
 
-/* Mobile viewport handling */
+/* 2. Global CSS Variable System */
+:root {
+  --kb-offset: 0px;
+  --kb-transition-duration: 0.3s;
+  --kb-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 3. Layout Architecture - Container Layout */
+.mobile-keyboard-aware {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(59, 130, 246, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--kb-transition-duration) var(--kb-transition-easing);
+  contain: paint;
+  
+  /* Dynamic padding with keyboard offset */
+  padding-bottom: calc(1rem + var(--kb-offset, 0px) + env(safe-area-inset-bottom, 0px));
+}
+
+.mobile-safe-area {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 4. Scrollable Content Area */
+.main-content {
+  height: 100dvh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scroll-padding-bottom: calc(120px + var(--kb-offset, 0px));
+  
+  /* Keyboard-aware padding */
+  padding-bottom: calc(120px + var(--kb-offset, 0px));
+}
+
+/* 5. Input Container Optimization */
+.mobile-input-container {
+  position: relative;
+  z-index: 60;
+  contain: paint;
+}
+
+/* 6. Responsive Design Integration */
 @media screen and (max-width: 768px) {
-  .mobile-safe-area {
-    padding-bottom: env(safe-area-inset-bottom);
+  /* Mobile-first approach */
+  html, body {
+    height: 100dvh;
+    overflow: hidden;
   }
   
-  .mobile-keyboard-aware {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
-    background: rgba(59, 130, 246, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    transition: transform 0.3s ease-out;
+  /* Touch-friendly sizing */
+  button, input, textarea, select {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 16px !important; /* Prevent zoom on iOS */
   }
   
-  /* Ensure input stays above keyboard */
-  .mobile-input-container {
-    position: relative;
-    z-index: 60;
-  }
-  
-  /* Adjust main content when keyboard is open */
-  .keyboard-open .main-content {
-    padding-bottom: 120px; /* Space for input bar */
-    max-height: calc(100vh - 200px); /* Reduce height when keyboard is open */
-  }
-  
-  /* Make question bar more compact when keyboard is open */
+  /* Compact layouts when keyboard is open */
   .keyboard-open .question-bar {
     padding: 8px 12px;
   }
@@ -150,39 +183,15 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
     line-height: 1.3;
   }
   
-  /* Ensure question bar stays visible */
+  /* Question bar stays visible */
   .question-bar {
     position: sticky;
     top: 0;
     z-index: 40;
-    transition: all 0.3s ease;
+    transition: all var(--kb-transition-duration) var(--kb-transition-easing);
   }
   
-  /* Prevent zoom on input focus */
-  input[type="text"], input[type="email"], input[type="tel"], textarea, select {
-    font-size: 16px !important;
-  }
-  
-  /* Smooth scrolling for mobile */
-  .main-content {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    /* Ensure last message is always visible */
-    padding-bottom: 120px; /* Increased to account for input bar height */
-  }
-  
-  /* Ensure messages container has proper spacing */
-  .main-content > div {
-    padding-bottom: 120px; /* Increased to account for input bar height */
-  }
-  
-  /* Better touch targets for mobile */
-  button, input {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Ensure chat messages are visible when keyboard opens */
+  /* Chat message optimization */
   .keyboard-open .chat-message {
     margin-bottom: 8px;
   }
@@ -205,5 +214,110 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   /* Ensure proper spacing for input bar */
   .mobile-input-container {
     margin-top: 16px;
+  }
+}
+
+/* 7. Performance Optimizations */
+.mobile-keyboard-aware,
+.question-bar,
+.main-content {
+  will-change: transform, padding;
+}
+
+/* 8. Browser Compatibility Fallbacks */
+@supports not (height: 100dvh) {
+  html, body {
+    height: 100vh;
+  }
+  
+  .main-content {
+    height: 100vh;
+  }
+}
+
+/* 9. iOS Safari Specific Optimizations */
+@supports (-webkit-touch-callout: none) {
+  .mobile-keyboard-aware {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  .main-content {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 10. Keyboard State Classes */
+.keyboard-open {
+  /* Global keyboard open state */
+}
+
+.keyboard-open .main-content {
+  /* Adjust content when keyboard is open */
+  max-height: calc(100dvh - var(--kb-offset, 0px) - 120px);
+}
+
+/* 11. Smooth Transitions */
+* {
+  transition: padding-bottom var(--kb-transition-duration) var(--kb-transition-easing),
+              transform var(--kb-transition-duration) var(--kb-transition-easing);
+}
+
+/* 12. Focus Management */
+.mobile-keyboard-aware input:focus {
+  scroll-margin-bottom: calc(120px + var(--kb-offset, 0px));
+}
+
+/* 13. Additional Mobile Optimizations */
+@media screen and (max-width: 768px) {
+  /* Prevent text selection on UI elements */
+  .mobile-keyboard-aware button,
+  .mobile-keyboard-aware input {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Allow text selection in input fields */
+  .mobile-keyboard-aware input[type="text"],
+  .mobile-keyboard-aware textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+  
+  /* Optimize touch interactions */
+  .mobile-keyboard-aware button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Improve scrolling performance */
+  .main-content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Prevent pull-to-refresh on mobile */
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* 14. High DPI Display Optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .mobile-keyboard-aware {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* 15. Dark Mode Support (if needed) */
+@media (prefers-color-scheme: dark) {
+  .mobile-keyboard-aware {
+    background: rgba(30, 41, 59, 0.95);
+    border-top-color: rgba(255, 255, 255, 0.1);
   }
 }
