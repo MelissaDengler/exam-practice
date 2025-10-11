@@ -46,7 +46,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
   const totalMarks = stats.correctAnswers + stats.incorrectAnswers;
 
   return (
-    <div className="min-h-screen bg-blue-600 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-blue-600 flex flex-col">
       {/* Header */}
       <div className="bg-blue-500 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12 flex-shrink-0">
         <div className="text-center">
@@ -66,7 +66,7 @@ export default function Dashboard({ onBack }: DashboardProps) {
       </div>
 
       {/* Dashboard Content */}
-      <div className="flex-1 bg-blue-700 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 overflow-y-auto">
+      <div className="flex-1 bg-blue-700 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="max-w-6xl mx-auto">
           
           {/* Back Button */}

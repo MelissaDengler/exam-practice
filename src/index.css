@@ -63,7 +63,7 @@ body {
   opacity: 0.6;
 }
 
-/* Ensure body and html don't have scrollbars */
+/* Ensure body and html don't have horizontal scrollbars */
 html, body {
   overflow-x: hidden;
   scrollbar-width: none;
@@ -98,12 +98,11 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 /* 1. Visual Viewport API Support */
 @supports (height: 100dvh) {
   html {
-    height: 100dvh;
+    min-height: 100dvh;
   }
   
   body {
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100dvh;
   }
 }
 
@@ -131,20 +130,40 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
   padding-bottom: calc(1rem + var(--kb-offset, 0px) + env(safe-area-inset-bottom, 0px));
 }
 
+/* Desktop InputBar positioning */
+@media screen and (min-width: 769px) {
+  .mobile-keyboard-aware {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(59, 130, 246, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
 .mobile-safe-area {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* 4. Scrollable Content Area */
 .main-content {
-  height: 100dvh;
-  overflow: auto;
+  min-height: 100dvh;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   scroll-padding-bottom: calc(120px + var(--kb-offset, 0px));
   
   /* Keyboard-aware padding */
   padding-bottom: calc(120px + var(--kb-offset, 0px));
+}
+
+/* Desktop content spacing for fixed InputBar */
+@media screen and (min-width: 769px) {
+  .main-content {
+    padding-bottom: 120px; /* Space for fixed InputBar */
+  }
 }
 
 /* 5. Input Container Optimization */
@@ -158,8 +177,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 @media screen and (max-width: 768px) {
   /* Mobile-first approach */
   html, body {
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100dvh;
   }
   
   /* Touch-friendly sizing */
@@ -227,11 +245,11 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 /* 8. Browser Compatibility Fallbacks */
 @supports not (height: 100dvh) {
   html, body {
-    height: 100vh;
+    min-height: 100vh;
   }
   
   .main-content {
-    height: 100vh;
+    min-height: 100vh;
   }
 }
 

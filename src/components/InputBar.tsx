@@ -154,7 +154,7 @@ export default function InputBar({ onSubmit, onSkip, onBack, canGoBack, disabled
       className={`${
         isMobile 
           ? 'mobile-keyboard-aware mobile-safe-area' 
-          : 'sticky bottom-0 z-10 bg-transparent'
+          : 'fixed bottom-0 left-0 right-0 z-50 bg-blue-500/95 backdrop-blur-sm'
       } p-3 sm:p-4`}
       style={{
         paddingBottom: isMobile ? `calc(1rem + var(--kb-offset, 0px) + env(safe-area-inset-bottom, 0px))` : undefined

@@ -351,7 +351,7 @@ function App() {
   const currentState = questionStates[currentQuestionIndex];
 
   return (
-    <div className="h-screen bg-blue-500 flex flex-col font-primary overflow-hidden" style={{ height: '100dvh' }}>
+    <div className="min-h-screen bg-blue-500 flex flex-col font-primary">
       <QuestionBar
         question={currentQuestion}
         currentIndex={currentQuestionIndex}
@@ -360,7 +360,7 @@ function App() {
         paperTitle="Accounting Paper 1 - Nov"
       />
 
-      <div className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto main-content">
+      <div className="flex-1 p-3 sm:p-4 lg:p-6 main-content" style={{ paddingBottom: '120px' }}>
         <div className="max-w-4xl mx-auto">
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
